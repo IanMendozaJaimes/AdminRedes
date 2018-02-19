@@ -1,0 +1,23 @@
+{
+  "name": "adminredes",
+  "version": "1.0.0",
+  "description": "Practicas",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IanMendozaJaimes/AdminRedes.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IanMendozaJaimes/AdminRedes/issues"
+  },
+  "homepage": "https://github.com/IanMendozaJaimes/AdminRedes#readme",
+  "dependencies": {
+    "dnsd": "^0.9.6",
+    "express": "^4.16.2"
+  }
+}
