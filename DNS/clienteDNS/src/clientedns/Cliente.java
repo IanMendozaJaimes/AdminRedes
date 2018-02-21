@@ -24,18 +24,37 @@ public class Cliente implements Tipos{
             
             ManejadorDNS mDNS = new ManejadorDNS();
             
-            String dom = mDNS.obtenerDominoSolicitado(msg);
-            System.out.println("DOMINIO: " + dom);
-            
-            if(!dom.contains("facebook.com")){
-                byte res[] = mDNS.mandarPreguntaDNS(msg);
+            String dom[] = mDNS.obtenerDominoSolicitado(msg);
+
+            System.out.println("DOMINIO: " + dom[0]);
+            if(!dom[0].contains("facebook.com")){
+                byte res[] = mDNS.mandarPreguntaDNS(msg, dp.getLength());
                 DatagramPacket dpRes = new DatagramPacket(res, res.length, dp.getAddress(), dp.getPort());
                 ds.send(dpRes);
             }
             else{
-                byte res[] = mDNS.responder(msg);
-                DatagramPacket dpRes = new DatagramPacket(res, res.length, dp.getAddress(), dp.getPort());
-                ds.send(dpRes);
+                if(dom[1].equals("1")){
+                    byte res[] = mDNS.responder(msg, dp.getLength());
+                    
+                    for(int i = 0; i < res.length;){
+                        String a = String.format("%x", res[i]);
+                        String b = (a.length() == 1)?"0"+a:a;
+                        System.out.print( b + " ");
+                        if(++i % 16 == 0){
+                            System.out.println("");
+                        }
+                        
+                    }
+                    
+                    DatagramPacket dpRes = new DatagramPacket(res, res.length, dp.getAddress(), dp.getPort());
+                    ds.send(dpRes);
+                    System.out.println("\nENVIE MI CABECERA");
+                }
+                else{
+                    byte res[] = mDNS.mandarPreguntaDNS(msg, dp.getLength());
+                    DatagramPacket dpRes = new DatagramPacket(res, res.length, dp.getAddress(), dp.getPort());
+                    ds.send(dpRes);
+                }
             }
             
             ds.close();

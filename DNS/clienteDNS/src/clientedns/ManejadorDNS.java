@@ -29,13 +29,28 @@ public class ManejadorDNS implements Tipos{
         
     }
     
-    public byte[] responder(byte query[]) throws IOException{
+    public byte[] responder(byte query[], int tam) throws IOException{
         
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
+        for(int i = 0; i < query.length;){
+            String a = String.format("%x", query[i]);
+            String b = (a.length() == 1)?"0"+a:a;
+            System.out.print( b + " ");
+            if(++i % 16 == 0){
+                System.out.println("");
+            }
+
+        }
+        
+        System.out.println("\n==========================");
+        
+        query[6] = 0x00;
+        query[7] = 0x01;
+        
         // iniciamos la respuesta con la peticion inicial
-        dos.write(query);
+        dos.write(query, 0, tam);
         
         // escribimos el apuntador al nombre
         dos.writeShort(0xc00c);
@@ -46,11 +61,11 @@ public class ManejadorDNS implements Tipos{
         // decimos que la clase es in
         dos.writeShort(0x0001);
         
-        // decimos que el ttl es 2000
-        dos.writeShort(2000);
+        // decimos que el ttl
+        dos.writeInt(0x1110);
         
         // decimos que la longitud es de 4 bytes
-        dos.writeShort(4);
+        dos.writeShort(0x0004);
         
         // ponemos la ip del servidor http
         dos.write(IP_HTTP);
@@ -70,9 +85,10 @@ public class ManejadorDNS implements Tipos{
         
         // escribiendo la pregunta
         dos.write(generarPregunta(direccion, tipo));
+        byte cabecera[] = baos.toByteArray();
         
         // mandamos el mensaje
-        byte respuesta[] = mandarPreguntaDNS(baos.toByteArray());
+        byte respuesta[] = mandarPreguntaDNS(cabecera, cabecera.length);
         
         //imprimimos la respuesta
         imprimirRespuesta(respuesta, lista);
@@ -81,9 +97,12 @@ public class ManejadorDNS implements Tipos{
         
     }
     
-    public String obtenerDominoSolicitado(byte query[]) throws IOException{
+    public String[] obtenerDominoSolicitado(byte query[]) throws IOException{
         
-        String dominio = "";
+        String dominio[] = new String[2];
+        
+        dominio[0] = "";
+        dominio[1] = "";
         
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(query));
         dis.skipBytes(12);
@@ -95,8 +114,12 @@ public class ManejadorDNS implements Tipos{
             for(int j = 0; j < plen; j++){
                 nom[j] = dis.readByte();
             }
-            dominio += new String(nom, 0, plen) + ".";
+            dominio[0] += new String(nom, 0, plen) + ".";
         }
+        
+        int tipo = dis.readShort();
+        
+        dominio[1] = String.valueOf(tipo);
         
         return dominio;
         
@@ -215,11 +238,11 @@ public class ManejadorDNS implements Tipos{
         info.setDatos(ip.substring(0,ip.length()-1));
     }
     
-    public byte[] mandarPreguntaDNS(byte msg[]) throws SocketException, UnknownHostException, IOException{
+    public byte[] mandarPreguntaDNS(byte msg[], int tam) throws SocketException, UnknownHostException, IOException{
         
         System.out.println("Mandando: " + msg.length + " bytes.");
         DatagramSocket ds = new DatagramSocket();
-        DatagramPacket dp = new DatagramPacket(msg, msg.length, InetAddress.getByName(HOST), PUERTO);
+        DatagramPacket dp = new DatagramPacket(msg, tam, InetAddress.getByName(HOST), PUERTO);
         ds.send(dp);
         
         DatagramPacket res = new DatagramPacket(new byte[MAX_BUFFER], MAX_BUFFER);
