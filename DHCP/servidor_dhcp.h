@@ -17,7 +17,7 @@
 
 
 	int iniciar_servidor(char*, int, struct sockaddr_in*);
-	void imprimir_trama(char*, int);
+	void imprimir_trama(unsigned char*, int);
 	void error(char*);
 
 

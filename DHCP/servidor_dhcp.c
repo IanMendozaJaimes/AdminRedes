@@ -7,17 +7,21 @@ int main(){
 	int servidor, leidos;
 	socklen_t addrlen;
 
-	servidor = iniciar_servidor(GRUPO_BROADCAST, PUERTO_SERVIDOR, &addr);
+	servidor = iniciar_servidor(GRUPO_BROADCAST, PUERTO_CLIENTE, &addr);
 	addrlen = sizeof(addr);
 	
-	printf("El servidor esta listo y escuchando en el puerto %d.\n\n", PUERTO_SERVIDOR);
+	printf("El servidor esta listo y escuchando en el puerto %d.\n\n", PUERTO_CLIENTE);
 	
 	while(1){
-		char buffer[MAX_BUFFER];
+
+		unsigned char buffer[MAX_BUFFER];
+
 		if((leidos = recvfrom(servidor, buffer, MAX_BUFFER, 0, (struct sockaddr*) &addr, &addrlen)) < 0){
 			error("No se pudo recibir el mensaje");
 		}
+
 		imprimir_trama(buffer, leidos);
+		
 	}
 
 	return 0;
@@ -62,7 +66,9 @@ int iniciar_servidor(char * host, int puerto, struct sockaddr_in * addr){
 	return sock;
 }
 
-void imprimir_trama(char * trama, int tam){
+void imprimir_trama(unsigned char * trama, int tam){
+	printf("================================================\n");
+	printf("La trama tiene un tam: %d bytes. \n\n", tam);
 	int i = 0;
 	for(;i < tam;){
 		printf("%02x ", trama[i]);
@@ -73,6 +79,7 @@ void imprimir_trama(char * trama, int tam){
 			printf(" ");
 		}
 	}
+	printf("\n");
 }
 
 
