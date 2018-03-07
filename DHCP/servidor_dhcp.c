@@ -5,7 +5,7 @@ int main(){
 	
 	struct sockaddr_in addr;
 	struct respuesta res;
-	struct mensaje_info msg_info;
+	struct conf_dchp conf;
 	int servidor, leidos;
 	socklen_t addrlen;
 
@@ -23,8 +23,8 @@ int main(){
 		}
 		
 		imprimir_trama(buffer, leidos);
-		analizar_mensaje(&msg_info, buffer, leidos);
-		generar_cabecera_respuesta(&res, buffer, &msg_info);		
+		analizar_mensaje(&conf_dhcp, buffer, leidos);
+		generar_cabecera_respuesta(&res, buffer, &conf_dchp);		
 		imprimir_trama(res.contenido, res.tam);		
 	}
 
@@ -32,16 +32,21 @@ int main(){
 }
 
 
-int analizar_mensaje(struct mensaje_info * info, unsigned char * msg, int tam){
+int analizar_mensaje(struct conf_dhcp * conf, unsigned char * msg, int tam){
 	if(info == NULL){return -1;}
 	if(msg == NULL){return -1;}
 	
-	// obtenemos el hardware address
-	info -> haddr_len = msg[2];
+	// ================================================================
+	// Aqui va la obtencion de la conf, pero aun estamos trabajando en
+	// eso, por el momento, la iniciaremos con datos fijos
+	
+	conf -> haddr = (unsigned char *)malloc(6 * sizeof(char));
+	conf -> ip = (unsigned char *)calloc(4,  sizeof(char));
+	conf -> tid = (unsigned char *)malloc(4 * sizeof(char));
 
-	info -> haddr = (unsigned char *)malloc(info -> haddr_len * sizeof(char));
-	info -> ip = (unsigned char *)calloc(4,  sizeof(char));
-	info -> tid = (unsigned char *)malloc(4 * sizeof(char));
+	// ================================================================
+
+	
 
 	// obtenemos el transaction id
 	copiar_arreglo(info -> tid, msg + 4, 4);
@@ -125,6 +130,24 @@ int generar_cabecera_respuesta(struct respuesta * res, unsigned char * msg, stru
 	copiar_arreglo(res -> contenido + 20, msg + 20, 152);
 
 	res -> contenido[236] = '\0';		
+
+	return 0;
+}
+
+int agregar_configuracion(struct respuesta * res){
+	if(res == NULL){return -1;}
+
+	struct conf_dhcp conf;
+	int i = 0;
+
+	// ====================================
+	// Aqui va una funcion para iniciar a conf con datos de la base de datos, pero
+	// seguimos trabajando en ello
+	// ====================================	
+	
+	for(; i < CAMPOS_DHCP; i++){
+		
+	}
 
 	return 0;
 }

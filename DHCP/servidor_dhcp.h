@@ -14,6 +14,7 @@
 	#define PUERTO_CLIENTE 68
 	#define GRUPO_BROADCAST "225.255.255.255"
 	#define MAX_BUFFER 1024
+	#define CAMPOS_DHCP 5
 	
 
 	struct respuesta{
