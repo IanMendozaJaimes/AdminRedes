@@ -33,6 +33,7 @@
 		char * ipv4;
 		char * mascara;
 		char * enlace;
+		char * dns;
 	};
 
 
