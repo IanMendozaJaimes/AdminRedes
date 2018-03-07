@@ -49,6 +49,9 @@ int analizar_mensaje(struct mensaje_info * info, unsigned char * msg, int tam){
 	// obtenemos la direccion fisica
 	copiar_arreglo(info -> haddr, msg + 28, info -> haddr_len);
 
+	printf("Direccion MAC: ");
+	imprimir_trama(info -> haddr, info -> haddr_len);
+
 	// ya con su direccion fisica, podemos ver si tenemos una ip asignada
 	// a esta maquina, esto tiene que hacerce con tablas en una base de datos
 	// que por cierto, aun no tenemos jeje, por eso lo vamos a hacer feo, y le

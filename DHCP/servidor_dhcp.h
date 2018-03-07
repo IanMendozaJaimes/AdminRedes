@@ -28,6 +28,13 @@
 		unsigned char * tid; // transaction id
 	};
 
+	struct conf_dchp{
+		char * mac;
+		char * ipv4;
+		char * mascara;
+		char * enlace;
+	};
+
 
 	int iniciar_servidor(char*, int, struct sockaddr_in*);
 	int generar_cabecera_respuesta(struct respuesta *, unsigned char *, struct mensaje_info *);
