@@ -11,6 +11,8 @@
 	#include <time.h>
 	#include <ifaddrs.h>
 	#include <netdb.h>	
+	#include <my_global.h>
+	#include <mysql.h>
 
 	#define PUERTO_SERVIDOR 67
 	#define PUERTO_CLIENTE 68
@@ -47,6 +49,7 @@
 	int agregar_configuraciones(struct respuesta *, struct conf_dhcp *);	
 	int agregar_configuracion(struct respuesta *, unsigned char *, int, unsigned char);
 	int obtener_ip_servidor(unsigned char **);
+	int conseguir_configuracion(struct conf_dhcp *config,unsigned char *mac);
 
 	void imprimir_trama(unsigned char*, int);
 	void error(char*);
