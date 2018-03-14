@@ -9,12 +9,15 @@
 	#include <netinet/in.h>
 	#include <arpa/inet.h>
 	#include <time.h>
+	#include <ifaddrs.h>
+	#include <netdb.h>	
 
 	#define PUERTO_SERVIDOR 67
 	#define PUERTO_CLIENTE 68
 	#define GRUPO_BROADCAST "225.255.255.255"
 	#define MAX_BUFFER 1024
 	#define CAMPOS_DHCP 5
+	#define INTERFAZ_RED "wlan0"
 	
 
 	struct respuesta{
@@ -29,7 +32,7 @@
 		unsigned char * tid; // transaction id
 	};
 
-	struct conf_dchp{
+	struct conf_dhcp{
 		char * mac;
 		char * ipv4;
 		char * mascara;
@@ -39,8 +42,11 @@
 
 
 	int iniciar_servidor(char*, int, struct sockaddr_in*);
-	int generar_cabecera_respuesta(struct respuesta *, unsigned char *, struct mensaje_info *);
-	int analizar_mensaje(struct mensaje_info *, unsigned char *, int);
+	int generar_cabecera_respuesta(struct respuesta *, unsigned char *, struct conf_dhcp *);
+	int analizar_mensaje(struct conf_dhcp *, unsigned char *, int);
+	int agregar_configuraciones(struct respuesta *, struct conf_dhcp *);	
+	int agregar_configuracion(struct respuesta *, unsigned char *, int, unsigned char);
+	int obtener_ip_servidor(unsigned char **);
 
 	void imprimir_trama(unsigned char*, int);
 	void error(char*);

@@ -5,7 +5,7 @@ int main(){
 	
 	struct sockaddr_in addr;
 	struct respuesta res;
-	struct conf_dchp conf;
+	struct conf_dhcp conf;
 	int servidor, leidos;
 	socklen_t addrlen;
 
@@ -23,8 +23,9 @@ int main(){
 		}
 		
 		imprimir_trama(buffer, leidos);
-		analizar_mensaje(&conf_dhcp, buffer, leidos);
-		generar_cabecera_respuesta(&res, buffer, &conf_dchp);		
+		analizar_mensaje(&conf, buffer, leidos);
+		generar_cabecera_respuesta(&res, buffer, &conf);
+		agregar_configuraciones(&res, &conf);	
 		imprimir_trama(res.contenido, res.tam);		
 	}
 
@@ -33,40 +34,33 @@ int main(){
 
 
 int analizar_mensaje(struct conf_dhcp * conf, unsigned char * msg, int tam){
-	if(info == NULL){return -1;}
+	if(conf == NULL){return -1;}
 	if(msg == NULL){return -1;}
 	
-	// ================================================================
-	// Aqui va la obtencion de la conf, pero aun estamos trabajando en
-	// eso, por el momento, la iniciaremos con datos fijos
-	
-	conf -> haddr = (unsigned char *)malloc(6 * sizeof(char));
-	conf -> ip = (unsigned char *)calloc(4,  sizeof(char));
-	conf -> tid = (unsigned char *)malloc(4 * sizeof(char));
-
-	// ================================================================
-
-	
-
-	// obtenemos el transaction id
-	copiar_arreglo(info -> tid, msg + 4, 4);
+	unsigned char * mac = (unsigned char *)malloc(6 * sizeof(char));
+	conf -> ipv4 = (unsigned char *)calloc(4,  sizeof(char));
 
 	// obtenemos la direccion fisica
-	copiar_arreglo(info -> haddr, msg + 28, info -> haddr_len);
+	copiar_arreglo(mac, msg + 28, 6);
 
 	printf("Direccion MAC: ");
-	imprimir_trama(info -> haddr, info -> haddr_len);
+	imprimir_trama(mac, 6);
 
-	// ya con su direccion fisica, podemos ver si tenemos una ip asignada
-	// a esta maquina, esto tiene que hacerce con tablas en una base de datos
-	// que por cierto, aun no tenemos jeje, por eso lo vamos a hacer feo, y le
-	// daremos una ip ya fija
-	
+	// ================================================================
+	// ya con su direccion fisica, podemos ver si tenemos una configuracion
+	// para la maquina que nos solicita, es decir, aqui se manda a llamar al
+	// metodo de iniciar la estructura conf_dhcp, como no tenemos eso jeje,
+	// le ponemos una ip asi fija
 	// ====================================
-	info -> ip[0] = 0xc0;
-	info -> ip[1] = 0xa8;
-	info -> ip[2] = 0x01;
-	info -> ip[3] = 0x64;
+	conf -> ipv4[0] = 0xc0;
+	conf -> ipv4[1] = 0xa8;
+	conf -> ipv4[2] = 0x01;
+	conf -> ipv4[3] = 0x65;
+
+	conf -> mac = mac;
+	conf -> dns = NULL;
+	conf -> mascara = NULL;
+	conf -> enlace = NULL;
 	// ====================================
 
 	return 0;
@@ -110,10 +104,11 @@ int iniciar_servidor(char * host, int puerto, struct sockaddr_in * addr){
 	return sock;
 }
 
-int generar_cabecera_respuesta(struct respuesta * res, unsigned char * msg, struct mensaje_info * info){
+int generar_cabecera_respuesta(struct respuesta * res, unsigned char * msg, struct conf_dhcp * conf){
 	if(res == NULL){return -1;}
+	if(conf == NULL){return -1;}
 	
-	int t = 237; // la cabecera mide 236 pero tambien contammos el caracter de fin de cadena
+	int t = 241; // la cabecera basica mide 236, mas la magic cookie son otros 4, pero tambien contammos el caracter de fin de cadena
 	res -> contenido = (unsigned char *)malloc(t*sizeof(char));
 	res -> tam = t - 1;
 
@@ -123,31 +118,102 @@ int generar_cabecera_respuesta(struct respuesta * res, unsigned char * msg, stru
 	// ponemos el htype, hlen, hops, xid, secs, flas y clien ip address como en el msg
 	copiar_arreglo(res -> contenido + 1, msg + 1, 15);
 	
-	// yiaddr, vamos a hacerlo feo, dando una ip fija
-	copiar_arreglo(res -> contenido + 16, info -> ip, 4);	
+	// ponemos la yiaddr
+	copiar_arreglo(res -> contenido + 16, conf -> ipv4, 4);	
 	
 	// siaddr, giaddr, chaddr, padding del chaddr
 	copiar_arreglo(res -> contenido + 20, msg + 20, 152);
 
-	res -> contenido[236] = '\0';		
+	// unsigned char magic_cookie[4] = {63, 82, 53, 63};
+	// ponemos la magic cookie
+	res -> contenido[236] = 0x63;
+	res -> contenido[237] = 0x82; 
+	res -> contenido[238] = 0x53;
+	res -> contenido[239] = 0x63;
+	
+	res -> contenido[240] = '\0';		
 
 	return 0;
 }
 
-int agregar_configuracion(struct respuesta * res){
+int agregar_configuraciones(struct respuesta * res, struct conf_dhcp * conf){
 	if(res == NULL){return -1;}
-
-	struct conf_dhcp conf;
-	int i = 0;
-
-	// ====================================
-	// Aqui va una funcion para iniciar a conf con datos de la base de datos, pero
-	// seguimos trabajando en ello
-	// ====================================	
+	if(conf == NULL){return -1;}
 	
-	for(; i < CAMPOS_DHCP; i++){
+	int i = 0;
+	unsigned char * ip_servidor;
+	unsigned char datos_fijos[1] = {0x02};
+	
+	obtener_ip_servidor(&ip_servidor);
+	
+	// ponemos que es una respuesta 
+	agregar_configuracion(res, datos_fijos, 1, 0x35);	
+	
+	// ponemos el identificador del servidor, osea su ip
+	agregar_configuracion(res, ip_servidor, 4, 0x36);
+
+	return 0;
+}
+
+int agregar_configuracion(struct respuesta * res, unsigned char * datos, 
+				int tam, unsigned char tipo){
+	if(res == NULL){return -1;}
+	if(datos == NULL){return -2;}
+	
+	int nuevo_tam = 0;
+
+	nuevo_tam = res -> tam + tam + 3;
+	res -> contenido = realloc(res -> contenido, nuevo_tam);
+	
+	res -> contenido[res -> tam] = tipo;
+	res -> contenido[res -> tam+1] = (unsigned char)(tam & 0x000000ff);
+
+	copiar_arreglo(res -> contenido + res -> tam + 2, datos, tam);	
+	
+	res -> contenido[nuevo_tam - 1] = '\0';
+	res -> tam = nuevo_tam - 1;
+	
+	return 0;
+}
+
+
+int obtener_ip_servidor(unsigned char ** ip){
+	if(ip == NULL){return -1;}
+	
+	//struct ifaddrs * ifaddr, * ifa;
+	//int familia, s, n;
+
+	*ip = (unsigned char *)malloc(4 * sizeof(char));
+	(*ip)[0] = 0xc0; // 192
+	(*ip)[1] = 0xa8; // 168
+	(*ip)[2] = 0x01; // 1
+	(*ip)[3] = 0x64; // 100
+
+	//if(getifaddrs(&ifaddr) == -1){
+	//	error("No se pudieron obtener las interfaces de red.");
+	//}
+
+	//for(ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa -> ifa_next, n++){
+	//	if(ifa -> ifa_addr == NULL)
+	//		continue;
+
+	//	familia = ifa -> ifa_addr -> sa_family;
 		
-	}
+	//	if(strcmp(INTERFAZ_RED, ifa -> ifa_name) == 0){
+	//		s = getnameinfo(ifa->ifa_addr, 
+	//			(familia == AF_INET) ? sizeof(struct sockaddr_in):
+	//					       sizeof(struct sockaddr_in6),
+	//			*ip, 4, 
+	//			NULL, 0, NI_NUMERICHOST);
+
+	//		if(s != 0){
+	//			error("No se pudo obtener la direccion ip del servidor");
+	//		}
+
+	//		break;
+	//	}
+		
+	//}
 
 	return 0;
 }
