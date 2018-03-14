@@ -25,7 +25,8 @@ int main(){
 		imprimir_trama(buffer, leidos);
 		analizar_mensaje(&conf, buffer, leidos);
 		generar_cabecera_respuesta(&res, buffer, &conf);
-		agregar_configuraciones(&res, &conf);	
+		agregar_configuraciones(&res, &conf);
+		printf("###########################");	
 		imprimir_trama(res.contenido, res.tam);		
 	}
 
@@ -151,6 +152,17 @@ int agregar_configuraciones(struct respuesta * res, struct conf_dhcp * conf){
 	
 	// ponemos el identificador del servidor, osea su ip
 	agregar_configuracion(res, ip_servidor, 4, 0x36);
+
+	// ponemos el router, la puerta de enlace pues
+	agregar_configuracion(res, conf -> enlace, 4, 0x03);
+
+	// ponemos la mascara de red
+	agregar_configuracion(res, conf -> mascara, 4, 0x01);
+
+	// le pasamos el servidor dns
+	agregar_configuracion(res, conf -> dns, 4, 0x0f);
+
+	res -> contenido[res -> tam] = 0xff;
 
 	return 0;
 }
