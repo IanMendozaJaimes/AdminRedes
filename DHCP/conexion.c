@@ -1,41 +1,244 @@
-/* librerías que usaremos */
-//gcc conexion.c `mysql_config --cflags --libs`
+#include "servidor_dhcp.h"
 
-#include <mysql.h> /* libreria que nos permite hacer el uso de las conexiones y consultas con MySQL */
-#include <my_global.h>
-#include <stdio.h> /* Para poder usar printf, etc. */
+unsigned long convertir_char_entero(unsigned char * mac, int tam){
+	if(mac == NULL){return 0;}
 
-int main()
-{
-	MYSQL *conn; /* variable de conexión para MySQL */
-	MYSQL_RES *res; /* variable que contendra el resultado de la consuta */
-	MYSQL_ROW row; /* variable que contendra los campos por cada registro consultado */
-	char *server = "localhost"; /*direccion del servidor 127.0.0.1, localhost o direccion ip */
-	char *user = "root"; /*usuario para consultar la base de datos */
-	char *password = "champion"; /* contraseña para el usuario en cuestion */
-	char *database = "DHCP"; /*nombre de la base de datos a consultar */
-	conn = mysql_init(NULL); /*inicializacion a nula la conexión */
+	unsigned long nueva_mac = 0;
+	unsigned long aux = 0;
+	int i = 0;
 
-	/* conectar a la base de datos */
-	if (!mysql_real_connect(conn, server, user, password, database, 0, NULL, 0))
-	{ /* definir los parámetros de la conexión antes establecidos */
-		fprintf(stderr, "%s\n", mysql_error(conn)); /* si hay un error definir cual fue dicho error */
-		exit(1);
+	for(; i < tam; i++){
+		aux = mac[tam-1-i];
+		aux <<= i*8;
+		nueva_mac += aux;
 	}
 
-	/* enviar consulta SQL */
-	if (mysql_query(conn, "select * from DHCP_CI"))
-	{ /* definicion de la consulta y el origen de la conexion */
-		fprintf(stderr, "%s\n", mysql_error(conn));
-		exit(1);
+	return nueva_mac;
+}
+
+int convertir_entero_a_char(unsigned char ** arreglo, unsigned int dato){
+		if(arreglo == NULL){return -1;}
+
+		int i;
+
+		for(i = 0; i < 4; i++){
+			(*arreglo)[i] = (dato >> (8*(3-i))) & 0xff;
+		}
+
+		return 0;
+}
+
+int obtener_configuracion_guardada(unsigned char * mac, struct conf_dhcp * conf){
+	if(mac == NULL){return -1;}
+
+	MYSQL * con;
+	conectar(&con);
+
+	unsigned long nueva_mac = convertir_char_entero(mac, 6);
+	conf -> mac = (unsigned char *)malloc(6 * sizeof(char));
+	char query[500];
+	int i = 0;
+
+	(conf -> mac)[0] = mac[0];
+	(conf -> mac)[1] = mac[1];
+	(conf -> mac)[2] = mac[2];
+	(conf -> mac)[3] = mac[3];
+	(conf -> mac)[4] = mac[4];
+	(conf -> mac)[5] = mac[5];
+
+	sprintf(query, "call spObtenerConfiguracion(%lu);", nueva_mac);
+
+	if(mysql_query(con, query)){
+		error("No se pudo obtener la informacion de la base de datos.");
 	}
 
-	res = mysql_use_result(conn);
-	printf("Mac\tIPv4\tMascara\tEnlace\tDns\n");
-	while ((row = mysql_fetch_row(res)) != NULL) /* recorrer la variable res con todos los registros obtenidos para su uso */
-		printf("%s\t%s\t%s\t%s\t%s \n", row[0],row[1],row[2], row[3], row[4]); /* la variable row se convierte en un arreglo por el numero de campos que hay en la tabla */
+	MYSQL_RES * resultset = mysql_store_result(con);
+	MYSQL_ROW row;
 
-	/* se libera la variable res y se cierra la conexión */
-	mysql_free_result(res);
-	mysql_close(conn);
+	if(resultset == NULL){
+		todo_nulo(conf);
+		return 0;
+	}
+
+	if((row = mysql_fetch_row(resultset))){
+		for(; i < 4; i++)
+			llenar_informacion(conf, row[i], row[6-i], i, nueva_mac);
+	}
+
+	mysql_free_result(resultset);
+	mysql_close(con);
+
+	return 0;
+}
+
+int llenar_informacion(struct conf_dhcp * conf, char * permiso,
+	char * dato, int tipo, unsigned long mac){
+	if(permiso == NULL){return -1;}
+	if(dato == NULL){return -1;}
+	if(conf == NULL){return -1;}
+
+	unsigned int dato_aux;
+	int permiso_aux;
+
+	dato_aux = atoi(dato);
+	permiso_aux = atoi(permiso);
+
+	if(tipo == 0){ // dns
+		if(permiso_aux == 1){
+			conf -> dns = (unsigned char *)malloc(4 * sizeof(char));
+			convertir_entero_a_char(&(conf -> dns), dato_aux);
+		}
+		else{
+			conf -> dns = NULL;
+		}
+	}
+	else if(tipo == 1){ // enlace
+		if(permiso_aux == 1){
+			conf -> enlace = (unsigned char *)malloc(4 * sizeof(char));
+			convertir_entero_a_char(&(conf -> enlace), dato_aux);
+		}
+		else{
+			conf -> enlace = NULL;
+		}
+	}
+	else if(tipo == 2){ // mascara
+		if(permiso_aux == 1){
+			conf -> mascara = (unsigned char *)malloc(4 * sizeof(char));
+			convertir_entero_a_char(&(conf -> mascara), dato_aux);
+		}
+		else{
+			conf -> mascara = NULL;
+		}
+	}
+	else{
+		if(permiso_aux == 1){
+			dato_aux = obtener_ipv4(mac);
+			conf -> ipv4 = (unsigned char *)malloc(4 * sizeof(char));
+			convertir_entero_a_char(&(conf -> ipv4), dato_aux);
+		}
+		else{
+			conf -> ipv4 = NULL;
+		}
+	}
+
+	return 0;
+}
+
+unsigned int obtener_ipv4(unsigned long mac){
+	char arreglo[200];
+	unsigned int ip = 0;
+	MYSQL * con;
+
+	conectar(&con);
+	sprintf(arreglo, "call spObtenerIpv4(%lu);", mac);
+
+	if(mysql_query(con, arreglo)){
+		error("No se pudo obtener la ipv4.");
+	}
+
+	MYSQL_RES * resultset = mysql_store_result(con);
+	MYSQL_ROW row;
+
+	if(resultset == NULL){
+		error("No se pudo obtener la ipv4 prro.");
+	}
+
+	if((row = mysql_fetch_row(resultset))){
+		ip = atoi(row[0]);
+	}
+
+	mysql_free_result(resultset);
+	mysql_close(con);
+
+	return ip;
+}
+
+int registrar_ip(unsigned char * mac, unsigned char * ipv4){
+	if(mac == NULL){return -1;}
+	if(ipv4 == NULL){return -1;}
+
+	MYSQL * con;
+	char query[150];
+	unsigned long nueva_mac = convertir_char_entero(mac, 6);
+	unsigned int nueva_ip = (unsigned int)convertir_char_entero(ipv4, 4);
+
+	conectar(&con);
+	sprintf(query, "call spRegistrarIP(%lu, %u);", nueva_mac, nueva_ip);
+
+	if(mysql_query(con, query)){
+		error("No pude registrar la ip");
+	}
+
+	mysql_close(con);
+
+	return 0;
+}
+
+
+int eliminar_ip(unsigned char * mac){
+	if(mac == NULL){return -1;}
+
+	MYSQL * con;
+	char query[150];
+	unsigned long nueva_mac = convertir_char_entero(mac, 6);
+
+	conectar(&con);
+	sprintf(query, "call spEliminarIP(%lu);", nueva_mac);
+
+	if(mysql_query(con, query)){
+		error("No pude eliminar la ip");
+	}
+
+	mysql_close(con);
+
+	return 0;
+}
+
+
+
+int conectar(MYSQL ** con){
+	if(con == NULL){return -1;}
+
+	*con = mysql_init(NULL);
+
+	if(mysql_real_connect(*con, "localhost", "root",
+				"n0m3l0", "dhcp", 0, NULL, 0) == NULL){
+		error("No se pudo conectar a la base de datos.");
+		return -1;
+	}
+
+	return 0;
+}
+
+int todo_nulo(struct conf_dhcp * conf){
+	if(conf == NULL){return -1;}
+
+	conf -> mac = NULL;
+	conf -> ipv4 = NULL;
+	conf -> mascara = NULL;
+	conf -> enlace = NULL;
+	conf -> dns = NULL;
+
+	return 0;
+}
+
+void imprimir_direcciones(unsigned char * direccion, int tam, int tipo){
+	if(direccion == NULL){return;}
+
+	int i;
+	char puntos;
+
+	if(tipo == 0)
+		puntos = ':';
+	else
+		puntos = '.';
+
+	for(i = 0; i < tam; i++){
+		if(tipo == 0)
+			printf("%02x%c", (unsigned int)(direccion)[i], ((i < tam-1)?puntos:' '));
+		else
+			printf("%d%c", (unsigned int)(direccion)[i], ((i < tam-1)?puntos:' '));
+	}
+	printf("%s\n", " ");
+
 }
