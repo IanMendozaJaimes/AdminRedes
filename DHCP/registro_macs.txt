@@ -1,0 +1,1 @@
+mac	ipv4	dns	enlace	mascaraac:3b:45:c0:90:d1	1	1	1	1bc:2c:12:ca:9c:43	1	0	1	1
