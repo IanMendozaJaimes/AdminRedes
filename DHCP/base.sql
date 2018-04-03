@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.5.59, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.21, for Linux (x86_64)
 --
 -- Host: localhost    Database: dhcp
 -- ------------------------------------------------------
--- Server version	5.5.59-0+deb8u1
+-- Server version	5.7.21-0ubuntu0.17.10.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -38,7 +38,7 @@ CREATE TABLE `configuracion` (
 
 LOCK TABLES `configuracion` WRITE;
 /*!40000 ALTER TABLE `configuracion` DISABLE KEYS */;
-INSERT INTO `configuracion` VALUES (0,1,1,1,1),(106312637677568,1,0,1,1),(189370573295825,1,1,1,1),(206897479851075,1,0,1,1),(246320239287372,1,1,1,1);
+INSERT INTO `configuracion` VALUES (238368719013065,1,1,1,1),(238368719207340,1,1,1,1),(238368719208138,1,0,1,1);
 /*!40000 ALTER TABLE `configuracion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -77,7 +77,7 @@ DROP TABLE IF EXISTS `ip_usadas`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `ip_usadas` (
   `mac` bigint(20) unsigned NOT NULL,
-  `ipv4` int(10) unsigned DEFAULT NULL,
+  `ipv4` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`mac`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -88,6 +88,7 @@ CREATE TABLE `ip_usadas` (
 
 LOCK TABLES `ip_usadas` WRITE;
 /*!40000 ALTER TABLE `ip_usadas` DISABLE KEYS */;
+INSERT INTO `ip_usadas` VALUES (238368719013065,3232235879),(238368719208138,3232235880);
 /*!40000 ALTER TABLE `ip_usadas` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -100,4 +101,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-02 22:51:00
+-- Dump completed on 2018-04-03  8:38:08

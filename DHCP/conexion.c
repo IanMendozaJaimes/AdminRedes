@@ -133,6 +133,7 @@ unsigned int obtener_ipv4(unsigned long mac){
 	sprintf(arreglo, "call spObtenerIpv4(%lu);", mac);
 
 	if(mysql_query(con, arreglo)){
+		printf("%s\n", arreglo);
 		error("No se pudo obtener la ipv4.");
 	}
 
@@ -164,7 +165,7 @@ int registrar_ip(unsigned char * mac, unsigned char * ipv4){
 
 	conectar(&con);
 	sprintf(query, "call spRegistrarIP(%lu, %u);", nueva_mac, nueva_ip);
-
+	printf("MIRA NO MAS: %s", query);
 	if(mysql_query(con, query)){
 		error("No pude registrar la ip");
 	}
@@ -202,7 +203,7 @@ int conectar(MYSQL ** con){
 	*con = mysql_init(NULL);
 
 	if(mysql_real_connect(*con, "localhost", "root",
-				"n0m3l0", "dhcp", 0, NULL, 0) == NULL){
+				"root", "dhcp", 0, NULL, 0) == NULL){
 		error("No se pudo conectar a la base de datos.");
 		return -1;
 	}

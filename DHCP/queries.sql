@@ -22,7 +22,7 @@ DELIMITER //
 create procedure spObtenerIpv4(in address bigint)
 begin
 
-  declare existe int;
+  declare existe bigint;
 
   set existe = (select ifnull(max(ipv4), 0) from ip_usadas where mac = address);
   if(existe > 0) then
@@ -36,7 +36,7 @@ DELIMITER ;
 
 
 DELIMITER //
-create procedure spRegistrarIP(in address bigint, in ip int)
+create procedure spRegistrarIP(in address bigint, in ip bigint)
 begin
 
   declare existe int;

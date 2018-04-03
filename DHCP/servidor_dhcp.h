@@ -20,10 +20,11 @@
 	#define PUERTO_SERVIDOR 67
 	#define PUERTO_CLIENTE 68
 	#define GRUPO_BROADCAST "225.255.255.255"
-	#define BROADCAST_INTERFAZ "192.168.1.255"
+	//#define BROADCAST_INTERFAZ "192.168.1.255"
+	#define BROADCAST_INTERFAZ "255.255.255.255"
 	#define MAX_BUFFER 1024
 	#define CAMPOS_DHCP 5
-	#define INTERFAZ_RED "wlan0"
+	#define INTERFAZ_RED "eno1"
 
 
 	struct respuesta{

@@ -95,8 +95,8 @@ int analizar_mensaje(struct conf_dhcp * conf, unsigned char * msg, int tam){
 int obtener_decision_cliente(unsigned char * msg){
 	if(msg == NULL){return 0;}
 
-	int i;
 	char opcion;
+	int i;
 
 	for(i = 4;;){
 		opcion = *(msg + i);
@@ -104,15 +104,19 @@ int obtener_decision_cliente(unsigned char * msg){
 			i += *(msg + i + 1) + 2;
 			continue;
 		}
+
 		unsigned char ip_respuesta[4];
 		unsigned char * ip_servidor;
 
 		obtener_ip_servidor(&ip_servidor);
 		copiar_arreglo(ip_respuesta, msg + i + 2, *(msg + i + 1));
-
-		if(strcmp(ip_servidor, ip_respuesta) != 0){
-			return 0;
+		
+		for(i = 0; i < 4; i++){
+			if(ip_servidor[i] != ip_respuesta[i]){
+				return 0;
+			}
 		}
+
 		break;
 	}
 
@@ -140,7 +144,7 @@ int iniciar_servidor2(char * host, int puerto, struct sockaddr_in * addr){
 	addr -> sin_port = htons(puerto);
 
 	if(bind(sock, (struct sockaddr *)addr, sizeof(struct sockaddr)) == -1){
-		error("No se pudo hacer el bind");
+		error("No se pudo hacer el bind2");
 	}
 
 	return sock;
@@ -224,7 +228,7 @@ int agregar_configuraciones(struct respuesta * res, struct conf_dhcp * conf){
 
 	int i = 0;
 	unsigned char * ip_servidor;
-	unsigned char datos_fijos[2] = {0x02, 0x04};
+	unsigned char datos_fijos[2] = {0x02, 0x05};
 
 	obtener_ip_servidor(&ip_servidor);
 
