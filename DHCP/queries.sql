@@ -61,3 +61,20 @@ begin
 
 end //
 DELIMITER ;
+
+
+DELIMITER //
+create procedure spIngresarDatos(in address bigint, in ip tinyint, in d tinyint, in en tinyint, in m tinyint)
+begin
+
+  declare existe int;
+
+  set existe = (select count(mac) from configuracion where mac = address);
+  if(existe = 1) then
+    update configuracion set ipv4 = ip, dns = d, enlace = en, mascara = m where mac = address;
+  else
+    insert into configuracion values(address, ip, d, en, m);
+  end if ;
+
+end //
+DELIMITER ;

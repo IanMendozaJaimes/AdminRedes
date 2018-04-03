@@ -13,6 +13,9 @@
 	#include <netdb.h>
 	#include <my_global.h>
 	#include <mysql.h>
+	#include <fcntl.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 
 	#define PUERTO_SERVIDOR 67
 	#define PUERTO_CLIENTE 68

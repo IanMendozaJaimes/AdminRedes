@@ -306,22 +306,6 @@ void cerrar_res(struct respuesta * res){
 
 }
 
-void cerrar_config(struct conf_dhcp * conf){
-	if(conf == NULL){return;}
-
-	if(conf -> mac != NULL)
-		free(conf -> mac);
-	if(conf -> ipv4 != NULL)
-		free(conf -> ipv4);
-	if(conf -> mascara != NULL)
-		free(conf -> mascara);
-	if(conf -> enlace != NULL)
-		free(conf -> enlace);
-	if(conf -> mac != NULL)
-		free(conf -> dns);
-
-}
-
 
 void imprimir_trama(unsigned char * trama, int tam){
 	printf("================================================\n");
@@ -337,10 +321,4 @@ void imprimir_trama(unsigned char * trama, int tam){
 		}
 	}
 	printf("\n");
-}
-
-
-void error(char * msg){
-	perror(msg);
-	exit(1);
 }

@@ -38,7 +38,7 @@ CREATE TABLE `configuracion` (
 
 LOCK TABLES `configuracion` WRITE;
 /*!40000 ALTER TABLE `configuracion` DISABLE KEYS */;
-INSERT INTO `configuracion` VALUES (246320239287372,1,1,1,1);
+INSERT INTO `configuracion` VALUES (0,1,1,1,1),(106312637677568,1,0,1,1),(189370573295825,1,1,1,1),(206897479851075,1,0,1,1),(246320239287372,1,1,1,1);
 /*!40000 ALTER TABLE `configuracion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -78,8 +78,7 @@ DROP TABLE IF EXISTS `ip_usadas`;
 CREATE TABLE `ip_usadas` (
   `mac` bigint(20) unsigned NOT NULL,
   `ipv4` int(10) unsigned DEFAULT NULL,
-  PRIMARY KEY (`mac`),
-  CONSTRAINT `ip_usadas_ibfk_1` FOREIGN KEY (`mac`) REFERENCES `configuracion` (`mac`) ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (`mac`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -101,4 +100,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-04-01 21:21:42
+-- Dump completed on 2018-04-02 22:51:00
